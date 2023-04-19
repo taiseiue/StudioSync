@@ -13,6 +13,10 @@ namespace StudioSyncServer
         {
             Groups.AddToGroupAsync(Context.ConnectionId,code.ToString());
         }
+        public async void Bye(string code)
+        {
+            Groups.RemoveFromGroupAsync(Context.ConnectionId, code.ToString());
+        }
         public async void SaveSync(string script, string code)
         {
             await this.Clients.Group(code.ToString()).SendAsync("Sync",script);

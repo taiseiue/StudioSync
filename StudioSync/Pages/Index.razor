@@ -1,6 +1,7 @@
 ﻿@page "/"
 @page "/{coden}"
 @using Microsoft.AspNetCore.SignalR.Client;
+@inject NavigationManager MyNavigationManager
 
 <PageTitle>Index</PageTitle>
 
@@ -12,6 +13,7 @@
     string ChatSendingText = "";
     string NowTime = "00:00:00";
     string MainTime = "00:00";
+    string NewSyncCode = "";
     string FriendryName = "スタジオ";
     Progress UsingProgress = null;
     DateTime TimeLimit = DateTime.MinValue;
@@ -104,7 +106,7 @@
             Script = raw;
             UsingProgress = new Progress(raw);
             TimeLimit = DateTime.Parse(d);
-            */
+        */
         });
         hubConnection.On("TimerPause", () =>
         {
@@ -126,7 +128,26 @@
         await hubConnection.InvokeAsync("Join",SynchroCode);
 
     }
+    async void OnNewSync()
+    {
+        if (string.IsNullOrEmpty(NewSyncCode))
+        {
 
+        }
+        else
+        {
+            await hubConnection.InvokeAsync("Bye", SynchroCode);
+            chats.Clear();
+            var ce = new ChatEntry();
+            ce.Name = "システム";
+            ce.Content = "参加先を変更しました";
+            ce.Recived = DateTime.Now;
+            chats.Add(ce);
+            SynchroCode = NewSyncCode;
+            await hubConnection.InvokeAsync("Send", "システム", FriendryName + "が参加しました", SynchroCode);
+        }
+        await hubConnection.InvokeAsync("Join", SynchroCode);
+    }
     async void OnChatSend()
     {
         if (!string.IsNullOrEmpty(ChatSendingText))
@@ -241,11 +262,16 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p>このスタジオに参加するには、シンクロコード<b>@SynchroCode</b>を使用するか、下記のQRコードをスキャンします。</p>
+                <p>この@(FriendryName)に参加するには、シンクロコード<b>@SynchroCode</b>を使用するか、下記のQRコードをスキャンします。</p>
                 <p class="text-center">
-                    <img src="@("https://api.qrserver.com/v1/create-qr-code/?data=https%3A%2F%2Fstudio-sync.wsoft.ws%2F"+SynchroCode+"&size=200x200")" alt="QRコード" />
+                    <img src="@("https://api.qrserver.com/v1/create-qr-code/?data="+ System.Web.HttpUtility.UrlEncode(MyNavigationManager.BaseUri)+SynchroCode+"&size=200x200")" alt="QRコード" />
                 </p>
-                
+                <hr/>
+                <p>もしくは、シンクロコードを使って他のスタジオに参加することもできます</p>
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" @bind="NewSyncCode" placeholder="シンクロコード" aria-label="シンクロコード" aria-describedby="button-addon22">
+                    <button class="btn btn-outline-primary" @onclick="OnNewSync" type="button" id="button-addon22">シンクロ</button>
+                </div>
             </div>
         </div>
     </div>
