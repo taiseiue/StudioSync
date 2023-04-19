@@ -1,0 +1,252 @@
+﻿@page "/"
+@page "/{coden}"
+@using Microsoft.AspNetCore.SignalR.Client;
+
+<PageTitle>Index</PageTitle>
+
+@code{
+
+    List<ChatEntry> chats = new List<ChatEntry>();
+    System.Timers.Timer Timer = new System.Timers.Timer(1000);
+    private ElementReference canvasElement;
+    string ChatSendingText = "";
+    string NowTime = "00:00:00";
+    string MainTime = "00:00";
+    string FriendryName = "スタジオ";
+    Progress UsingProgress = null;
+    DateTime TimeLimit = DateTime.MinValue;
+    TimeSpan CountUp = TimeSpan.Zero;
+    TimeSpan TimeMax = TimeSpan.Zero;
+    int cd = -1;
+    bool timering = false;
+    bool finish = false;
+    string Script="2:04#コーナー\r\n5:00";
+    bool IsConnected => hubConnection?.State == HubConnectionState.Connected;
+    string SynchroCode = "";
+    HubConnection hubConnection;
+
+    [Parameter]
+    public string coden{ get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Timer.Elapsed +=  async (object? sender, System.Timers.ElapsedEventArgs e)=>
+        {
+            DateTime time = DateTime.Now;
+            NowTime = time.ToString("hh:mm:ss");
+            if (finish)
+            {
+                MainTime = "00:00";
+            }
+            else
+
+            if (timering)
+            {
+                TimeMax -= TimeSpan.FromSeconds(1); CountUp += TimeSpan.FromSeconds(1);
+                MainTime = TimeMax.Minutes + ":"+TimeMax.Seconds;
+                if (TimeMax == TimeSpan.Zero)
+                {
+                    timering = false;
+                    finish = true;
+                }
+
+            }else
+            if (cd != -1)
+            {
+                cd--;
+                MainTime = "00:0"+cd;
+                if (cd == 0)
+                {
+                    cd = -1;
+                    timering = true;
+                    finish = false;
+                }
+            }else
+            if (TimeLimit.Minute == time.Minute && TimeLimit.Second == time.Second)
+            {
+                TimeMax = UsingProgress.Total;
+                //タイマー開始
+                cd = 3;
+                MainTime = "00:0"+cd;
+            }
+            StateHasChanged();
+        };
+        Timer.Start();
+
+        var hub2 = new HubConnectionBuilder();
+        hubConnection = hub2.WithUrl("https://api.wsoft.ws/studio-sync/connect").Build();
+        hubConnection.On<string,string>("ReciveMessage", (string name, string message) =>
+    {
+        var ct_e = new ChatEntry();
+        ct_e.Name = name;
+        ct_e.Content = message;
+        ct_e.Recived = DateTime.Now;
+        chats.Add(ct_e);
+
+    });
+        hubConnection.On<string>("Sync", (string script) =>
+        {
+            Script = script;
+
+        });
+        hubConnection.On<string>("TimerStart", (string script) =>
+        {
+            Script = script;
+            UsingProgress = new Progress(script);
+            TimeMax = UsingProgress.Total;
+            //タイマー開始
+            cd = 3;
+            MainTime = "00:0" + cd;
+            /*
+            NowTime = "シンクロ中";
+            string raw = script.Split('|')[1];
+            string d = script.Split('|')[0];
+            Script = raw;
+            UsingProgress = new Progress(raw);
+            TimeLimit = DateTime.Parse(d);
+            */
+        });
+        hubConnection.On("TimerPause", () =>
+        {
+            timering=false;
+            finish = true;
+        });
+        await hubConnection.StartAsync();
+
+        if (string.IsNullOrEmpty(coden))
+        {
+            Random random = new Random();
+            SynchroCode = (random.Next(100000, 999999)).ToString();
+        }
+        else
+        {
+            SynchroCode = coden;
+            await hubConnection.InvokeAsync("Send","システム",FriendryName+"が参加しました", SynchroCode);
+        }
+        await hubConnection.InvokeAsync("Join",SynchroCode);
+
+    }
+
+    async void OnChatSend()
+    {
+        if (!string.IsNullOrEmpty(ChatSendingText))
+        {
+            await hubConnection.InvokeAsync("Send", FriendryName, ChatSendingText,SynchroCode);
+            ChatSendingText = string.Empty;
+        }
+    }
+    async void OnSaveSync()
+    {
+        await hubConnection.InvokeAsync("SaveSync",Script,SynchroCode);
+    }
+    async void OnTimerStart()
+    {
+        var progress = new Progress(Script);
+        await hubConnection.InvokeAsync("Send", FriendryName,progress.Total.Minutes+":"+progress.Total.Seconds+"のタイマーを開始しました", SynchroCode);
+        //タイマー同期時刻を計算
+        var dt = DateTime.Now;
+        dt=dt.AddSeconds(5);
+        //計算した時刻でタイマーを開始するよう広告
+        await hubConnection.InvokeAsync("TimerStartAd",Script, SynchroCode);
+    }
+    async void OnTimerPause()
+    {
+        await hubConnection.InvokeAsync("TimerPauseAd",SynchroCode);
+    }
+}
+<nav class="navbar navbar-expand-lg navbar-light">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#">StudioSync</a>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <input class="form-control me-2" @bind="FriendryName" type="text" placeholder="このデバイスの名前" aria-label="このデバイスの名前">
+                </li>
+
+            </ul>
+            <div class="d-flex">
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                    シンクロ
+                </button>
+                @if (IsConnected)
+                {
+                    <button class="btn btn-success" type="submit"><i class="bi bi-wifi"></i></button>
+                }
+                else
+                {
+                    <button class="btn btn-danger" type="submit"><i class="bi bi-wifi-off"></i></button>
+                }
+            </div>
+        </div>
+    </div>
+</nav>
+<div class="container">
+    <div class="row">
+        <div class="col-8">
+            <div class="container">
+                <div class="row">
+                    <div class="col-8">
+                        <p>現在時刻</p>
+                        <h2>@NowTime</h2>
+                    </div>
+                    <div class="col-4">
+                        <p>次のシーン/終了まで</p>
+                        <h2>00:00</h2>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col">
+                        <p class="text-center fs-4">「「コーナー名」」</p>
+                        <p class="text-center" style="font-size: 150px;">@MainTime</p>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <div class="text-center">
+                    <div class="btn-group" role="group" aria-label="Basic mixed styles example">
+                        <button type="button" @onclick="OnTimerPause" class="btn btn-danger"><i class="bi bi-square-fill"></i></button>
+                        <button type="button" @onclick="OnTimerStart" class="btn btn-success"><i class="bi bi-caret-right-fill"></i></button>
+                    </div>
+                </div>
+                <hr />
+                <div class="input-group mb-3">
+                    <input type="text" @bind="ChatSendingText" class="form-control" placeholder="メッセージを送信" aria-label="メッセージを送信" aria-describedby="button-addon2">
+                    <button class="btn btn-primary" type="button" id="button-addon2" @onclick="OnChatSend"><i class="bi bi-send"></i></button>
+                </div>
+                <hr />
+                <div>
+                    <p>進行スクリプト <button type="button"  onclick="@OnSaveSync" class="btn btn-primary">保存</button></p>
+                    <textarea class="form-control" @bind="Script" aria-label="With textarea" placeholder="//進行をここに記入してください"></textarea>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="overflow-scroll" style="height :100vh" id="chat">
+                
+                @foreach(var chat in chats)
+                {
+                    <DynamicComponent Type="typeof(ChatEntry)" Parameters="@(new Dictionary<string,object>{["Name"]=chat.Name,["Content"]=chat.Content,["Recived"]=chat.Recived})"/>
+                }
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">このスタジオに参加する</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>このスタジオに参加するには、シンクロコード<b>@SynchroCode</b>を使用するか、下記のQRコードをスキャンします。</p>
+                <p class="text-center">
+                    <img src="@("https://api.qrserver.com/v1/create-qr-code/?data=https%3A%2F%2Fstudio-sync.wsoft.ws%2F"+SynchroCode+"&size=200x200")" alt="QRコード" />
+                </p>
+                
+            </div>
+        </div>
+    </div>
+</div>
