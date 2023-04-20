@@ -3,7 +3,7 @@
 @using Microsoft.AspNetCore.SignalR.Client;
 @inject NavigationManager MyNavigationManager
 
-<PageTitle>Index</PageTitle>
+<PageTitle>@FriendryName - StudioSync</PageTitle>
 
 @code{
 
@@ -259,11 +259,11 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="exampleModalLabel">このスタジオに参加する</h5>
+                <h5 class="modal-title" id="exampleModalLabel">このセッションに参加する</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p>この@(FriendryName)に参加するには、シンクロコード<b>@SynchroCode</b>を使用するか、下記のQRコードをスキャンします。</p>
+                <p>この@(FriendryName)と接続するには、シンクロコード<b>@SynchroCode</b>を使用するか、下記のQRコードをスキャンします。</p>
                 <p class="text-center">
                     <img src="@("https://api.qrserver.com/v1/create-qr-code/?data="+ System.Web.HttpUtility.UrlEncode(MyNavigationManager.BaseUri)+SynchroCode+"&size=200x200")" alt="QRコード" />
                 </p>
