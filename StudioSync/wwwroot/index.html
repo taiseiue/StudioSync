@@ -18,12 +18,17 @@
 </head>
 
 <body>
-    <div id="app">Loading...</div>
+    <div id="app">
+    <div class="d-flex align-items-center">
+  <strong>StudioSyncを起動しています...</strong>
+  <div class="spinner-border ms-auto" role="status" aria-hidden="true"></div>
+</div>
+    </div>
 
     <div id="blazor-error-ui">
-        An unhandled error has occurred.
-        <a href="" class="reload">Reload</a>
-        <a class="dismiss">🗙</a>
+        致命的なエラーが発生しました。
+        <a href="" class="reload"><i class="bi bi-arrow-clockwise"></i>再読み込み</a>
+        <a class="dismiss"><i class="bi bi-x-lg"></i></a>
     </div>
     <script src="_framework/blazor.webassembly.js"></script>
     <script>navigator.serviceWorker.register('service-worker.js');</script>
