@@ -22,7 +22,7 @@
     int cd = -1;
     bool timering = false;
     bool finish = false;
-    string Script="2:04#コーナー\r\n5:00";
+    string Script="5:00";
     bool IsConnected => hubConnection?.State == HubConnectionState.Connected;
     string SynchroCode = "";
     HubConnection hubConnection;
@@ -180,6 +180,7 @@
         <a class="navbar-brand" href="#">StudioSync</a>
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                
                 <li class="nav-item">
                     <input class="form-control me-2" @bind="FriendryName" type="text" placeholder="このデバイスの名前" aria-label="このデバイスの名前">
                 </li>
