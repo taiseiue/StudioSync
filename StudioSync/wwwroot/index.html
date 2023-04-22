@@ -19,19 +19,71 @@
 
 <body>
     <div id="app">
-    <div class="d-flex align-items-center">
-  <strong>StudioSyncを起動しています...</strong>
-  <div class="spinner-border ms-auto" role="status" aria-hidden="true"></div>
-</div>
-    </div>
+        <nav class="navbar navbar-expand-lg navbar-light">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#">StudioSync</a>
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
 
+                        <li class="nav-item">
+                            <div class="spinner-border text-secondary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </li>
+
+                    </ul>
+
+                </div>
+            </div>
+        </nav>
+        <div class="modal-open">
+            <div class="modal fade show" tabindex="-1" role="dialog" aria-modal="true" style="display: block;">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="exampleModalLabel">起動しています</h5>
+                        </div>
+                        <div class="modal-body text-center">
+                            <h1>StudioSync</h1>
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            Copylight 2023 WSOFT All rights reserved.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="infoModal" tabindex="-1" aria-labelledby="infoModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="infoModalLabel">このアプリについて</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <h2>StudioSync</h2>
+                    <p><b>バージョン13</b></p>
+                    <p>Copylight (c) 2023 WSOFT All rights reserved.</p>
+                    <p>StudioSyncは<a href="https://github.com/taiseiue/StudioSync/">オープンソースプロジェクト</a>として公開しています。</p>
+                </div>
+            </div>
+        </div>
+    </div>
     <div id="blazor-error-ui">
-        致命的なエラーが発生しました。
+        エラーが発生しました。
         <a href="" class="reload"><i class="bi bi-arrow-clockwise"></i>再読み込み</a>
         <a class="dismiss"><i class="bi bi-x-lg"></i></a>
     </div>
+
     <script src="_framework/blazor.webassembly.js"></script>
-    <script>navigator.serviceWorker.register('service-worker.js');</script>
+    <script>
+    navigator.serviceWorker.register('service-worker.js');
+    </script>
+
 </body>
 
 </html>

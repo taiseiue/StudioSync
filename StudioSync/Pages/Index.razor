@@ -2,6 +2,7 @@
 @page "/{coden}"
 @using Microsoft.AspNetCore.SignalR.Client;
 @inject NavigationManager MyNavigationManager
+@inject IJSRuntime JSRuntime;
 
 <PageTitle>@FriendryName - StudioSync</PageTitle>
 
@@ -15,6 +16,7 @@
     string MainTime = "00:00";
     string NewSyncCode = "";
     string FriendryName = "スタジオ";
+    string ConnectionAddress = "https://api.wsoft.ws/studio-sync/connect";
     Progress UsingProgress = null;
     DateTime TimeLimit = DateTime.MinValue;
     TimeSpan CountUp = TimeSpan.Zero;
@@ -22,7 +24,7 @@
     int cd = -1;
     bool timering = false;
     bool finish = false;
-    string Script="5:00";
+    string Script="3:00";
     bool IsConnected => hubConnection?.State == HubConnectionState.Connected;
     string SynchroCode = "";
     HubConnection hubConnection;
@@ -76,7 +78,7 @@
         Timer.Start();
 
         var hub2 = new HubConnectionBuilder();
-        hubConnection = hub2.WithUrl("https://api.wsoft.ws/studio-sync/connect").Build();
+        hubConnection = hub2.WithUrl(ConnectionAddress).WithAutomaticReconnect().Build();
         hubConnection.On<string,string>("ReciveMessage", (string name, string message) =>
     {
         var ct_e = new ChatEntry();
@@ -114,7 +116,6 @@
             finish = true;
         });
         await hubConnection.StartAsync();
-
         if (string.IsNullOrEmpty(coden))
         {
             Random random = new Random();
@@ -156,6 +157,14 @@
             ChatSendingText = string.Empty;
         }
     }
+    async void OnConnectionChange()
+    {
+        if (IsConnected)
+        {
+            await hubConnection.StopAsync();
+        }
+        await hubConnection.StartAsync();
+    }
     async void OnSaveSync()
     {
         await hubConnection.InvokeAsync("SaveSync",Script,SynchroCode);
@@ -187,31 +196,33 @@
 
             </ul>
             <div class="d-flex">
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
-                    シンクロ
-                </button>
                 @if (IsConnected)
                 {
-                    <button class="btn btn-success" type="submit"><i class="bi bi-wifi"></i></button>
+                    <button class="btn btn-success" type="button" data-bs-toggle="modal" data-bs-target="#connectionModal"><i class="bi bi-wifi"></i></button>
                 }
                 else
                 {
-                    <button class="btn btn-danger" type="submit"><i class="bi bi-wifi-off"></i></button>
+                    <button class="btn btn-danger" type="button" data-bs-toggle="modal" data-bs-target="#connectionModal"><i class="bi bi-wifi-off"></i></button>
                 }
             </div>
         </div>
     </div>
 </nav>
-<div class="container">
+<div class="container-fluid">
     <div class="row">
-        <div class="col-8">
-            <div class="container">
+        <div class="col-4">
+            <h3>台本ビュー &nbsp; <button type="button" onclick="@OnSaveSync" class="btn btn-primary">保存</button></h3>
+            <textarea class="form-control" style="height: 100%;" @bind="Script" aria-label="With textarea" placeholder="//台本をここに入力します"></textarea>
+        </div>
+        <div class="col-4">
+            <h3>タイマービュー</h3>
+            <div class="container-fluid">
                 <div class="row">
-                    <div class="col-8">
+                    <div class="col-6">
                         <p>現在時刻</p>
                         <h2>@NowTime</h2>
                     </div>
-                    <div class="col-4">
+                    <div class="col-6">
                         <p>次のシーン/終了まで</p>
                         <h2>00:00</h2>
                     </div>
@@ -219,7 +230,7 @@
                 <div class="row">
                     <div class="col">
                         <p class="text-center fs-4">「「コーナー名」」</p>
-                        <p class="text-center" style="font-size: 150px;">@MainTime</p>
+                        <p class="text-center" style="font-size: 100px;">@MainTime</p>
                     </div>
                 </div>
             </div>
@@ -235,15 +246,22 @@
                     <input type="text" @bind="ChatSendingText" class="form-control" placeholder="メッセージを送信" aria-label="メッセージを送信" aria-describedby="button-addon2">
                     <button class="btn btn-primary" type="button" id="button-addon2" @onclick="OnChatSend"><i class="bi bi-send"></i></button>
                 </div>
-                <hr />
-                <div>
-                    <p>進行スクリプト <button type="button"  onclick="@OnSaveSync" class="btn btn-primary">保存</button></p>
-                    <textarea class="form-control" @bind="Script" aria-label="With textarea" placeholder="//進行をここに記入してください"></textarea>
+                <hr/>
+                <h3>シンクロ</h3>
+                <p>この@(FriendryName)と接続するには、シンクロコード<b>@SynchroCode</b>を使用するか、下記のQRコードをスキャンします。</p>
+                <p class="text-center">
+                    <img src="@("https://api.qrserver.com/v1/create-qr-code/?data="+ System.Web.HttpUtility.UrlEncode(MyNavigationManager.BaseUri)+SynchroCode+"&size=200x200")" alt="QRコード" />
+                </p>
+                <p>もしくは、シンクロコードを使って他のセッションに参加することもできます</p>
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" @bind="NewSyncCode" placeholder="シンクロコード" aria-label="シンクロコード" aria-describedby="button-addon22">
+                    <button class="btn btn-outline-primary" @onclick="OnNewSync" type="button" id="button-addon22">シンクロ</button>
                 </div>
             </div>
         </div>
-        <div class="col">
-            <div class="overflow-scroll" style="height :100vh" id="chat">
+        <div class="col-4">
+            <h3>チャットビュー</h3>
+            <div class="overflow-scroll" style="height :80vh" id="chat">
                 
                 @foreach(var chat in chats)
                 {
@@ -255,24 +273,39 @@
     </div>
 </div>
 
-<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal fade" id="connectionModal" tabindex="-1" aria-labelledby="connectionModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="exampleModalLabel">このセッションに参加する</h5>
+                <h5 class="modal-title" id="connectionModalLabel">この接続について</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p>この@(FriendryName)と接続するには、シンクロコード<b>@SynchroCode</b>を使用するか、下記のQRコードをスキャンします。</p>
-                <p class="text-center">
-                    <img src="@("https://api.qrserver.com/v1/create-qr-code/?data="+ System.Web.HttpUtility.UrlEncode(MyNavigationManager.BaseUri)+SynchroCode+"&size=200x200")" alt="QRコード" />
-                </p>
-                <hr/>
-                <p>もしくは、シンクロコードを使って他のスタジオに参加することもできます</p>
-                <div class="input-group mb-3">
-                    <input type="text" class="form-control" @bind="NewSyncCode" placeholder="シンクロコード" aria-label="シンクロコード" aria-describedby="button-addon22">
-                    <button class="btn btn-outline-primary" @onclick="OnNewSync" type="button" id="button-addon22">シンクロ</button>
+                <div id="connection-status">
+                    @if (IsConnected)
+                    {
+                        <p>ステータス:<b>接続済み</b></p>
+                        <p>現在、この端末は@(ConnectionAddress)に接続しています。</p>
+                        <p>台本やタイマーを同期、チャットの送受信を行うことができます。</p>
+                        <p>接続IDは<b>@(hubConnection.ConnectionId)</b>で、セッションIDは<b>@(SynchroCode)</b>です。</p>
+                    }
+                    else
+                    {
+                        <p>ステータス:<b>接続していません</b></p>
+                        <p>現在、この端末は@(ConnectionAddress)に接続していません。</p>
+                        <p>現在、台本やタイマーを同期、チャットの送受信を行うことができません。</p>
+                        <p>自動的に接続を再試行します。それでも上手くいかない場合は、接続先の変更が必要な場合があります。</p>
+                    }
                 </div>
+                <hr/>
+               <div id="connection-setting">
+                   <h6>接続先の変更</h6>
+                   <p>接続できない場合は、StudioSyncServerのアドレスを変更することで接続できるようになることがあります。</p>
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" @bind="ConnectionAddress" placeholder="接続先アドレス" aria-label="接続先アドレス" aria-describedby="button-addon23">
+                        <button class="btn btn-outline-primary" @onclick="OnConnectionChange" type="button" id="button-addon23">接続</button>
+                    </div>
+               </div>
             </div>
         </div>
     </div>

@@ -62,3 +62,10 @@ a, .btn-link {
     .blazor-error-boundary::after {
         content: "An error has occurred."
     }
+.typeing {
+    opacity: 0;
+}
+
+    .typeing.active {
+        opacity: 1;
+    }
