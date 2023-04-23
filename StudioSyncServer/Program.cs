@@ -4,6 +4,7 @@ using StudioSyncServer;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddCors();
+builder.Services.AddControllers();
 builder.Services.AddSignalR();
 builder.Services.AddResponseCompression(opts =>
 {
@@ -38,5 +39,8 @@ app.UseHttpsRedirection();
 
 app.UseResponseCompression();
 app.MapHub<MainHub>("/connect");
+app.MapControllers();
+
+Timering.Init();
 
 app.Run();
