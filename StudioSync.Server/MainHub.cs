@@ -60,8 +60,16 @@ namespace StudioSync.Server
         }
         public async void Fetch(string code)
         {
-            if (MasterServer.Server.SynccodeToSession.ContainsKey(code))
+            if (!string.IsNullOrEmpty(code) && MasterServer.Server.SynccodeToSession.ContainsKey(code))
             {
+                await Clients.Client(Context.ConnectionId).SendAsync("Clock", MasterServer.Server.SynccodeToSession[code]);
+            }
+        }
+        public async void PopScript(string code,string script)
+        {
+            if (!string.IsNullOrEmpty(code) && MasterServer.Server.SynccodeToSession.ContainsKey(code))
+            {
+                MasterServer.Server.SynccodeToSession[code].Scenario = new Scenario(script);
                 await Clients.Client(Context.ConnectionId).SendAsync("Clock", MasterServer.Server.SynccodeToSession[code]);
             }
         }

@@ -34,7 +34,7 @@
     bool fastrecive = false;
     string Script="3:00";
     int syncCount = 0;
-    int syncSecs = 3;
+    int syncSecs = 2;
     bool Initailzed = false;
     bool IsConnected => hubConnection?.State == HubConnectionState.Connected;
     HubConnection hubConnection;
@@ -110,9 +110,14 @@
                     {
                         Script = "";
                     }
+                    await hubConnection.InvokeAsync("PopScript", SynchroCode,Script);
                     StateHasChanged();
                 }
-                await hubConnection.InvokeAsync("Fetch", SynchroCode);
+                else
+                {
+
+                    await hubConnection.InvokeAsync("Fetch", SynchroCode);
+                }
             }
             else
             {
@@ -165,9 +170,11 @@
         });
         hubConnection.On<Session>("Clock", async(Session session) =>
         {
-            Script = session.Scenario.RawScript;
+            if (!Editing)
+            {
+                Script = session.Scenario.RawScript;
+            }
             chats = session.Messages;
-            LastUpdate = DateTime.Now;
             if (session.LifeChecking)
             {
                 //フラグが立っていたらLifeCheckを送り返す
@@ -180,6 +187,7 @@
                 Initailzed = true;
 
             }
+            LastUpdate = DateTime.Now;
             StateHasChanged();
         });
         await hubConnection.StartAsync();
@@ -298,11 +306,11 @@
                     <input class="form-control me-2" @bind="FriendryName" type="text" placeholder="このデバイスの名前" aria-label="このデバイスの名前">
                 </li>
                 <li class="nav-item">
-                    @if ((DateTime.Now - LastUpdate).TotalSeconds <= 1)
+                    @if ((DateTime.Now - LastUpdate).TotalSeconds < 3)
                     {
-                        <p class="nav-link disabled" tabindex="-1">最終更新:たった今</p>
+                        <p class="nav-link" tabindex="-1"><span class="text-success"><i class="bi bi-cloud-check-fill"></i>&nbsp;</span>リアルタイム</p>
                     }else{
-                    <p class="nav-link disabled"  tabindex="-1" >最終更新:@((int)(DateTime.Now-LastUpdate).TotalSeconds)秒前</p>
+                        <p class="nav-link" tabindex="-1"><span class="text-warning"><i class="bi bi-cloud-fill"></i>&nbsp;</span>最終更新:@((int)(DateTime.Now - LastUpdate).TotalSeconds)秒前</p>
                     }
                 </li>
 
