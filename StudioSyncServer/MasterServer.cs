@@ -23,7 +23,7 @@ namespace StudioSyncServer
         private static MasterServer m_server = null;
         private HubConnection hubConnection = null;
         private int nowCycle = 0;
-        private int polingCycle = 60;
+        private int polingCycle = 30;
         internal List<string> life_check = new List<string>();
         public MasterServer()
         {
@@ -33,7 +33,7 @@ namespace StudioSyncServer
         {
             var hub2 = new HubConnectionBuilder();
             hubConnection = hub2.WithUrl(ServerAddress + "/connect").WithAutomaticReconnect().Build();
-            var timer = new System.Timers.Timer(500);
+            var timer = new System.Timers.Timer(1000);
             timer.Elapsed += Timer_Elapsed;
             timer.Start();
             await hubConnection.StartAsync();
