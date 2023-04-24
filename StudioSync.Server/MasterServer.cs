@@ -2,7 +2,7 @@
 using StudioSync.Core;
 using System.Text.Json;
 
-namespace StudioSyncServer
+namespace StudioSync.Server
 {
     public class MasterServer
     {
@@ -23,7 +23,7 @@ namespace StudioSyncServer
         private static MasterServer m_server = null;
         private HubConnection hubConnection = null;
         private int nowCycle = 0;
-        private int polingCycle = 30;
+        private int polingCycle = 1;
         internal List<string> life_check = new List<string>();
         public MasterServer()
         {
@@ -33,11 +33,11 @@ namespace StudioSyncServer
         {
             var hub2 = new HubConnectionBuilder();
             hubConnection = hub2.WithUrl(ServerAddress + "/connect").WithAutomaticReconnect().Build();
-            var timer = new System.Timers.Timer(1000);
+            var timer = new System.Timers.Timer(60000);
             timer.Elapsed += Timer_Elapsed;
             timer.Start();
             await hubConnection.StartAsync();
-            await hubConnection.InvokeAsync("Join", "");
+            await hubConnection.InvokeAsync("Join", "","システム");
         }
 
         private async void Timer_Elapsed(object? sender, System.Timers.ElapsedEventArgs e)
@@ -55,7 +55,10 @@ namespace StudioSyncServer
                 }
                 foreach(string s in ls)
                 {
-                    SynccodeToSession.Remove(s);
+                    if (SynccodeToSession.ContainsKey(s))
+                    {
+                        SynccodeToSession.Remove(s);
+                    }
                 }
                 life_check.Clear();
                 //すべてのセッションにライフチェック中フラグをつける]

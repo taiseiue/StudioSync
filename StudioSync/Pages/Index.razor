@@ -18,21 +18,23 @@
     string NowTime = "00:00:00";
     string MainTime = "00:00";
     string NewSyncCode = "";
+    string FlowText = "サーバーとシンクロ中";
     string FriendryName = "スタジオ";
-    const string SystemMessageAuthor = "WSOFTSTUDIOSYNCADMIN";
     string ServerAddress = "https://api.wsoft.ws/studio-sync";
     string ClientID = Guid.NewGuid().ToString("N");
     Progress UsingProgress = null;
     DateTime TimeLimit = DateTime.MinValue;
     TimeSpan CountUp = TimeSpan.Zero;
     TimeSpan TimeMax = TimeSpan.Zero;
+    DateTime LastUpdate = DateTime.Now;
     int cd = -1;
     bool Editing = false;
     bool timering = false;
     bool finish = false;
+    bool fastrecive = false;
     string Script="3:00";
     int syncCount = 0;
-    int syncSecs = 2;
+    int syncSecs = 3;
     bool Initailzed = false;
     bool IsConnected => hubConnection?.State == HubConnectionState.Connected;
     HubConnection hubConnection;
@@ -110,6 +112,7 @@
                     }
                     StateHasChanged();
                 }
+                await hubConnection.InvokeAsync("Fetch", SynchroCode);
             }
             else
             {
@@ -126,11 +129,6 @@
         ct_e.Content = message;
         ct_e.Recived = DateTime.Now;
         ct_e.IsSystemMessage = false;
-        if (name == SystemMessageAuthor)
-        {
-            ct_e.Name = "システム";
-            ct_e.IsSystemMessage = true;
-        }
 
 
     });
@@ -169,10 +167,18 @@
         {
             Script = session.Scenario.RawScript;
             chats = session.Messages;
+            LastUpdate = DateTime.Now;
             if (session.LifeChecking)
             {
                 //フラグが立っていたらLifeCheckを送り返す
                 await hubConnection.InvokeAsync("LifeCheck",SynchroCode);
+            }
+            if (!fastrecive)
+            {
+                //初めての受信完了フラグを設定する
+                fastrecive = true;
+                Initailzed = true;
+
             }
             StateHasChanged();
         });
@@ -189,26 +195,36 @@
     {
         await JSRuntime.InvokeVoidAsync("showModal",id);
     }
-    async void OnWelcome()
+    async Task OnCoreWelcome()
     {
 
-        MyNavigationManager.NavigateTo($"/" + NewSyncCode, false);
-        await hubConnection.InvokeAsync("Join",  SynchroCode);
-        await hubConnection.InvokeAsync("Send", SystemMessageAuthor, FriendryName + "が参加しました", SynchroCode);
+        MyNavigationManager.NavigateTo($"/" + SynchroCode, false);
+        await OnJoinWelcome();
+    }
+    async void OnWelcome()
+    {
+        SynchroCode = NewSyncCode;
+        await OnCoreWelcome();
     }
     async void OnRandomWelcome()
     {
         Random random = new Random();
         SynchroCode = (random.Next(100000, 999999)).ToString();
-        MyNavigationManager.NavigateTo($"/" + SynchroCode, false);
-        await hubConnection.InvokeAsync("Join", SynchroCode);
-        await hubConnection.InvokeAsync("Send", SystemMessageAuthor, FriendryName + "が参加しました", SynchroCode);
+        await OnCoreWelcome();
     }
-    async void OnJoinWelcome()
+    async Task OnJoinWelcome()
     {
-        await hubConnection.InvokeAsync("Join", SynchroCode);
+        Initailzed = false;
+        FlowText = "セッションに参加中";
+        fastrecive = false;
+        StateHasChanged();
+        await hubConnection.InvokeAsync("Join", SynchroCode,FriendryName);
 
-        await hubConnection.InvokeAsync("Send", SystemMessageAuthor, FriendryName + "が参加しました", SynchroCode);
+    }
+    async void OnLeave()
+    {
+        await hubConnection.InvokeAsync("Bye", SynchroCode, FriendryName);
+        OnWelcome();
     }
     async void OnChatSend()
     {
@@ -261,7 +277,7 @@
                             <div class="spinner-border" role="status">
                                 <span class="visually-hidden">Loading...</span>
                             </div>
-                            <p>サーバーとシンクロ中</p>
+                            <p>@FlowText</p>
                         </div>
                         <div class="modal-footer">
                             Copylight 2023 WSOFT All rights reserved.
@@ -280,6 +296,14 @@
                 
                 <li class="nav-item">
                     <input class="form-control me-2" @bind="FriendryName" type="text" placeholder="このデバイスの名前" aria-label="このデバイスの名前">
+                </li>
+                <li class="nav-item">
+                    @if ((DateTime.Now - LastUpdate).TotalSeconds <= 1)
+                    {
+                        <p class="nav-link disabled" tabindex="-1">最終更新:たった今</p>
+                    }else{
+                    <p class="nav-link disabled"  tabindex="-1" >最終更新:@((int)(DateTime.Now-LastUpdate).TotalSeconds)秒前</p>
+                    }
                 </li>
 
             </ul>
@@ -308,12 +332,12 @@
                         <div class="form-check fs-4">
                             <input class="form-check-input" type="checkbox" @bind="Editing" id="flexCheckDefault">
                             <label class="form-check-label" for="flexCheckDefault">
-                                編集モード
+                                <i class="bi bi-pencil"></i>
                             </label>
                         </div>
                     </div>
                     <div class="col-2">
-                        <button type="button" @onclick="OnSaveSync" class="btn btn-primary">保存</button>
+                        <button type="button" @onclick="OnSaveSync" class="btn btn-primary"><i class="bi bi-cloud-upload"></i></button>
                     </div>
                 </div>
             </div>
@@ -362,7 +386,7 @@
                 <p>もしくは、シンクロコードを使って他のセッションに参加することもできます</p>
                 <div class="input-group mb-3">
                     <input type="text" class="form-control" @bind="NewSyncCode" placeholder="シンクロコード" aria-label="シンクロコード" aria-describedby="button-addon22">
-                    <button class="btn btn-outline-primary" @onclick="OnWelcome" type="button" id="button-addon22">シンクロ</button>
+                    <button class="btn btn-outline-primary" @onclick="OnLeave" type="button" id="button-addon22">シンクロ</button>
                 </div>
             </div>
         </div>

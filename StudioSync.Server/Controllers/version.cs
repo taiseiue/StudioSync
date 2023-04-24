@@ -1,4 +1,4 @@
-﻿namespace StudioSyncServer
+﻿namespace StudioSync.Server.Controllers
 {
     public static class version
     {

@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using StudioSync.Core;
 
-namespace StudioSyncServer
+namespace StudioSync.Server.Controllers
 {
     [Route("/version")]
     [ApiController]

@@ -1,18 +1,17 @@
 using Microsoft.AspNetCore.ResponseCompression;
-using StudioSyncServer;
+using StudioSync.Server;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container.
 
 builder.Services.AddCors();
 builder.Services.AddControllers();
 builder.Services.AddSignalR();
 builder.Services.AddResponseCompression(opts =>
 {
-    opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(new[] {"application/octet-stream"});
+    opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(new[] { "application/octet-stream" });
 });
-//builder.Services.AddServerSideBlazor();
-
-// Add services to the container.
 
 var app = builder.Build();
 
@@ -31,17 +30,17 @@ webSockeOptions.AllowedOrigins.Add("https://localhost:7038");
 
 app.UseWebSockets(webSockeOptions);
 
-
 // Configure the HTTP request pipeline.
 
-//app.UseHttpsRedirection();
+app.UseHttpsRedirection();
 
-//app.MapBlazorHub("connect");
+app.UseAuthorization();
 
 app.UseResponseCompression();
+
 app.MapHub<MainHub>("/connect");
+
 app.MapControllers();
 
-Timering.Init();
 
 app.Run();
