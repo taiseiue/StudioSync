@@ -12,7 +12,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ソリューション項目
 		build.sh = build.sh
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StudioSync.Core", "StudioSync.Core\StudioSync.Core.csproj", "{6312194C-FEA7-4712-9C62-2B4AEFEE5AF8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StudioSync.Core", "StudioSync.Core\StudioSync.Core.csproj", "{6312194C-FEA7-4712-9C62-2B4AEFEE5AF8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

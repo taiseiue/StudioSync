@@ -11,8 +11,7 @@
 <PageTitle>@FriendryName - StudioSync</PageTitle>
 
 @code{
-
-    List<ChatEntry> chats = new List<ChatEntry>();
+    List<Message> chats = new List<Message>();
     System.Timers.Timer Timer = new System.Timers.Timer(1000);
     private ElementReference canvasElement;
     string ChatSendingText = "";
@@ -21,7 +20,7 @@
     string NewSyncCode = "";
     string FriendryName = "スタジオ";
     const string SystemMessageAuthor = "WSOFTSTUDIOSYNCADMIN";
-    string ConnectionAddress = "https://api.wsoft.ws/studio-sync/connect";
+    string ServerAddress = "https://api.wsoft.ws/studio-sync";
     string ClientID = Guid.NewGuid().ToString("N");
     Progress UsingProgress = null;
     DateTime TimeLimit = DateTime.MinValue;
@@ -45,7 +44,7 @@
     {
         try
         {
-            var resp = await Http.GetAsync("https://api.wsoft.ws/studio-sync/version");
+            var resp = await Http.GetAsync(ServerAddress+"/version");
             var r = await resp.Content.ReadFromJsonAsync<AcceptRequirements>();
             if (r.MinClientVersion > version.Version)
             {
@@ -119,7 +118,7 @@
             StateHasChanged();
         };
         var hub2 = new HubConnectionBuilder();
-        hubConnection = hub2.WithUrl(ConnectionAddress).WithAutomaticReconnect().Build();
+        hubConnection = hub2.WithUrl(ServerAddress+"/connect").WithAutomaticReconnect().Build();
         hubConnection.On<string,string>("ReciveMessage", (string name, string message) =>
     {
         var ct_e = new ChatEntry();
@@ -133,9 +132,6 @@
             ct_e.IsSystemMessage = true;
         }
 
-        var m_chats = new List<ChatEntry>() { ct_e};
-        m_chats.AddRange(chats);
-        chats = m_chats;
 
     });
         hubConnection.On<string>("Sync", (string script) =>
@@ -169,19 +165,24 @@
             timering=false;
             finish = true;
         });
+        hubConnection.On<Session>("Clock", async(Session session) =>
+        {
+            Script = session.Scenario.RawScript;
+            chats = session.Messages;
+            if (session.LifeChecking)
+            {
+                //フラグが立っていたらLifeCheckを送り返す
+                await hubConnection.InvokeAsync("LifeCheck",SynchroCode);
+            }
+        });
         await hubConnection.StartAsync();
 
         Timer.Start();
 
         Initailzed = true;
+        await ShowModal("welcomeModal");
 
-    }
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            await ShowModal("welcomeModal");
-        }
+
     }
     async Task ShowModal(string id)
     {
@@ -191,7 +192,7 @@
     {
 
         MyNavigationManager.NavigateTo($"/" + NewSyncCode, false);
-        await hubConnection.InvokeAsync("Join", ClientID, SynchroCode);
+        await hubConnection.InvokeAsync("Join",  SynchroCode);
         await hubConnection.InvokeAsync("Send", SystemMessageAuthor, FriendryName + "が参加しました", SynchroCode);
     }
     async void OnRandomWelcome()
@@ -199,12 +200,12 @@
         Random random = new Random();
         SynchroCode = (random.Next(100000, 999999)).ToString();
         MyNavigationManager.NavigateTo($"/" + SynchroCode, false);
-        await hubConnection.InvokeAsync("Join", ClientID, SynchroCode);
+        await hubConnection.InvokeAsync("Join", SynchroCode);
         await hubConnection.InvokeAsync("Send", SystemMessageAuthor, FriendryName + "が参加しました", SynchroCode);
     }
     async void OnJoinWelcome()
     {
-        await hubConnection.InvokeAsync("Join", ClientID, SynchroCode);
+        await hubConnection.InvokeAsync("Join", SynchroCode);
 
         await hubConnection.InvokeAsync("Send", SystemMessageAuthor, FriendryName + "が参加しました", SynchroCode);
     }
@@ -242,6 +243,7 @@
     {
         await hubConnection.InvokeAsync("TimerPauseAd",SynchroCode);
     }
+
 }
 
 @if (!Initailzed)
@@ -365,11 +367,13 @@
         </div>
         <div class="col-4">
             <h3>チャットビュー</h3>
-            <div class="overflow-scroll toast-container" style="height :80vh" id="chat">
-                
-                @foreach (var chat in chats)
+            <div class="toast-container" id="chat">
+                @if (chats.Count > 0)
                 {
-                    <DynamicComponent Type="typeof(ChatEntry)" Parameters="@(new Dictionary<string,object>{["Name"]=chat.Name,["Content"]=chat.Content,["Recived"]=chat.Recived,["IsSystemMessage"]=chat.IsSystemMessage})"/>
+                    @for(int ix = chats.Count - 1; ix >= 0; --ix)
+                    {
+                        <ChatEntry Name="@chats[ix].From" Content="@chats[ix].Content" Recived="@chats[ix].SendTime" IsSystemMessage="@chats[ix].IsSystemMessage"></ChatEntry>
+                    }
                 }
 
             </div>
@@ -389,14 +393,14 @@
                     @if (IsConnected)
                     {
                         <p>ステータス:<b>接続済み</b></p>
-                        <p>現在、この端末は@(ConnectionAddress)に接続しています。</p>
+                        <p>現在、この端末は@(ServerAddress)に接続しています。</p>
                         <p>台本やタイマーを同期、チャットの送受信を行うことができます。</p>
                         <p>接続IDは<b>@(hubConnection.ConnectionId)</b>で、セッションIDは<b>@(SynchroCode)</b>です。</p>
                     }
                     else
                     {
                         <p>ステータス:<b>接続していません</b></p>
-                        <p>現在、この端末は@(ConnectionAddress)に接続していません。</p>
+                        <p>現在、この端末は@(ServerAddress)に接続していません。</p>
                         <p>現在、台本やタイマーを同期、チャットの送受信を行うことができません。</p>
                         <p>自動的に接続を再試行します。それでも上手くいかない場合は、接続先の変更が必要な場合があります。</p>
                     }
@@ -406,7 +410,7 @@
                    <h6>接続先の変更</h6>
                    <p>接続できない場合は、StudioSyncServerのアドレスを変更することで接続できるようになることがあります。</p>
                     <div class="input-group mb-3">
-                        <input type="text" class="form-control" @bind="ConnectionAddress" placeholder="接続先アドレス" aria-label="接続先アドレス" aria-describedby="button-addon23">
+                        <input type="text" class="form-control" @bind="ServerAddress" placeholder="接続先アドレス" aria-label="接続先アドレス" aria-describedby="button-addon23">
                         <button class="btn btn-outline-primary" @onclick="OnConnectionChange" type="button" id="button-addon23">接続</button>
                     </div>
                </div>

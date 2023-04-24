@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using StudioSync.Core;
 using System.ComponentModel;
+using System.Text.Json;
 using System.Xml.Linq;
 
 namespace StudioSyncServer
@@ -12,27 +13,44 @@ namespace StudioSyncServer
         {
             if (!string.IsNullOrEmpty(code))
             {
-                await this.Clients.Group(code.ToString()).SendAsync("ReciveMessage", name, message);
+                var mes = new Message();
+                mes.From = name;
+                mes.Content = message;
+                mes.SendTime= DateTime.Now;
+                MasterServer.Server.SynccodeToSession[code].AddMessage(mes);
             }
         }
-        public async void Join(string clientId,string code)
+        public async void Join(string code)
         {
             if (!string.IsNullOrEmpty(code))
             {
-                Groups.AddToGroupAsync(Context?.ConnectionId, code);
+                if (!MasterServer.Server.SynccodeToSession.ContainsKey(code))
+                {
+                    MasterServer.Server.SynccodeToSession[code] = new Session();
+
+                }
+                MasterServer.Server.life_check.Add(code);
+                await Groups.AddToGroupAsync(Context?.ConnectionId, code);
 
             }
         }
-        public async void Bye(string clientId, string code)
+        public async void Bye(string code)
         {
             if (!string.IsNullOrEmpty(code))
             {
-                if (Timering.IdToSync.ContainsKey(clientId))
-                {
-                    Timering.IdToSync.Remove(clientId);
-                }
-                Groups.RemoveFromGroupAsync(Context?.ConnectionId, code);
+                await Groups.RemoveFromGroupAsync(Context?.ConnectionId, code);
             }
+        }
+        public async void LifeCheck(string code)
+        {
+            
+                MasterServer.Server.life_check.Add(code);
+        }
+        public async void ClockServer(string code,string session)
+        {
+                var ses=JsonSerializer.Deserialize<Session>(session);
+                await this.Clients.Group(code).SendAsync("Clock",ses );
+
         }
         public async void SaveSync(string script, string code)
         {

@@ -31,9 +31,10 @@ webSockeOptions.AllowedOrigins.Add("https://localhost:7038");
 
 app.UseWebSockets(webSockeOptions);
 
+
 // Configure the HTTP request pipeline.
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 
 //app.MapBlazorHub("connect");
 

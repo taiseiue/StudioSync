@@ -1,28 +1,36 @@
-﻿<div class="toast show" data-bs-animation="true" role="alert" aria-live="assertive" aria-atomic="true">
-    <div class="toast-header">
-        @if (IsSystemMessage)
-        {
-            <strong class="fs-5"><i class="bi bi-gear-wide-connected"></i></strong>
+﻿
+
+@code {
+
+
+
+    [Parameter]
+    public string Name{ get; set; }
+    [Parameter]
+    public string Content{ get; set; }
+    [Parameter]
+    public DateTime Recived{ get; set; }
+    [Parameter]
+    public bool IsSystemMessage{ get; set; }
+    [Parameter]
+    public string Key{ get; set; }
         }
-        else
-        {
-            <strong class="fs-5"><i class="bi bi-person"></i></strong>
-        }
-        &nbsp;
-        <strong class="me-auto">@Name</strong>
-        <small class="text-muted">@Recived.ToString("yyyy/MM/dd hh:mm")</small>
+
+    <div class="toast show" data-bs-animation="true" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+            @if (IsSystemMessage)
+            {
+                <strong class="fs-5"><i class="bi bi-gear-wide-connected"></i></strong>
+            }
+            else
+            {
+                <strong class="fs-5"><i class="bi bi-person"></i></strong>
+            }
+            &nbsp;
+            <strong class="me-auto">@Name</strong>
+            <small class="text-muted">@Recived.ToString("yyyy/MM/dd hh:mm")</small>
+        </div>
+        <div class="toast-body">
+            @Content
+        </div>
     </div>
-    <div class="toast-body">
-        @Content
-    </div>
-</div>
- @code {
-                [Parameter]
-                public string Name{ get; set; }
-                [Parameter]
-                public string Content{ get; set; }
-                [Parameter]
-                public DateTime Recived{ get; set; }
-                [Parameter]
-                public bool IsSystemMessage{ get; set; }
-        }
