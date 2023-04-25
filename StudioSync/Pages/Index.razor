@@ -334,7 +334,7 @@
             <div class="container">
                 <div class="row">
                     <div class="col-6">
-                        <h3>台本ビュー</h3>
+                        <h4>シナリオビュー</h4>
                     </div>
                     <div class="col-4">
                         <div class="form-check fs-4">
@@ -352,7 +352,7 @@
             <textarea class="form-control" style="height: 100%;" readonly="@(!Editing)" @bind="Script" aria-label="With textarea" placeholder="//台本をここに入力します"></textarea>
         </div>
         <div class="col-4">
-            <h3>タイマービュー</h3>
+            <h4>タイマービュー</h4>
             <div class="container-fluid">
                 <div class="row">
                     <div class="col-6">
@@ -399,7 +399,7 @@
             </div>
         </div>
         <div class="col-4">
-            <h3>チャットビュー</h3>
+            <h4>チャットビュー</h4>
             <div class="toast-container" id="chat">
                 @if (chats.Count > 0)
                 {
@@ -427,7 +427,7 @@
                     {
                         <p>ステータス:<b>接続済み</b></p>
                         <p>現在、この端末は@(ServerAddress)に接続しています。</p>
-                        <p>台本やタイマーを同期、チャットの送受信を行うことができます。</p>
+                        <p>台本やタイマーを同期、チャットの送受信を行うことができます。最終同期時刻は@(LastUpdate.ToString("hh:mm:ss"))です。</p>
                         <p>接続IDは<b>@(hubConnection.ConnectionId)</b>で、セッションIDは<b>@(SynchroCode)</b>です。</p>
                     }
                     else

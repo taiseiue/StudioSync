@@ -42,6 +42,7 @@ namespace StudioSync.Server
                 ms.From = "システム";
                 ms.IsSystemMessage = true;
                 ms.Content= text;
+                ms.SendTime= DateTime.Now;
                 MasterServer.Server.SynccodeToSession[code].AddMessage(ms);
 
             }
@@ -53,7 +54,7 @@ namespace StudioSync.Server
                 await Groups.RemoveFromGroupAsync(Context?.ConnectionId, code);
                 var ms = new Message();
                 ms.From = "システム";
-                ms.IsSystemMessage = true;
+                ms.IsSystemMessage = true;ms.SendTime = DateTime.Now;
                 ms.Content = friendryname + "がセッションから離脱しました";
                 MasterServer.Server.SynccodeToSession[code].AddMessage(ms);
             }

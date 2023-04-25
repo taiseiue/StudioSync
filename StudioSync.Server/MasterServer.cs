@@ -23,7 +23,7 @@ namespace StudioSync.Server
         private static MasterServer m_server = null;
         private HubConnection hubConnection = null;
         private int nowCycle = 0;
-        private int polingCycle = 1;
+        private int polingCycle = 5;
         internal List<string> life_check = new List<string>();
         public MasterServer()
         {
