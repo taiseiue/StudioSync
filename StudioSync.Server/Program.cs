@@ -18,7 +18,7 @@ var app = builder.Build();
 app.UseCors(b =>
 {
     b.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
-    //b.WithOrigins("https://localhost:7038").WithMethods("GET","POST").AllowCredentials();
+   // b.WithOrigins("https://localhost:7038").WithMethods("GET","POST").AllowCredentials();
 });
 
 var webSockeOptions = new WebSocketOptions
@@ -27,6 +27,7 @@ var webSockeOptions = new WebSocketOptions
 };
 
 webSockeOptions.AllowedOrigins.Add("https://localhost:7038");
+webSockeOptions.AllowedOrigins.Add("https://studiosync.wsoft.ws/");
 
 app.UseWebSockets(webSockeOptions);
 
