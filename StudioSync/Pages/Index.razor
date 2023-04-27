@@ -24,6 +24,7 @@
     string ServerAddress = "https://api.wsoft.ws/studio-sync";
     string ClientID = Guid.NewGuid().ToString("N");
     string GiphySearch = "Funny";
+    string ImgZoomSrc = "";
     List<string> GiphyResults = new List<string>();
     Progress UsingProgress = new Progress();
     DateTime TimeLimit = DateTime.MinValue;
@@ -207,7 +208,7 @@
     {
         try{
             string query = UrlEncoder.Default.Encode(GiphySearch);
-            var resp = await Http.GetAsync("https://api.giphy.com/v1/gifs/search?api_key=cexYwZ98TYZw7BIh0uptHoakXA7MbZty&q="+query+"&limit=11");
+            var resp = await Http.GetAsync("https://api.giphy.com/v1/gifs/search?api_key=cexYwZ98TYZw7BIh0uptHoakXA7MbZty&q="+query+"&limit=12&lang=ja");
             var r = await resp.Content.ReadFromJsonAsync<Giphy.Giphy>();
             GiphyResults.Clear();
             foreach(var d in r.Data)
@@ -216,11 +217,11 @@
                 {
                     GiphyResults.Add(d.Images.fixed_height_downsampled.Webp);
                 }catch{}
-        }
+            }
         }
         catch
         {
-            
+
         }
     }
     async Task ShowModal(string id)
@@ -383,7 +384,7 @@
             </div>
             <textarea class="form-control" style="height: 100%;" readonly="@(!Editing)" @bind="Script" aria-label="With textarea" placeholder="//台本をここに入力します"></textarea>
         </div>
-        <div class="col-4">
+        <div class="col-5">
             <h4>タイマー</h4>
             <div class="container-fluid">
                 <div class="row">
@@ -412,32 +413,26 @@
                 </div>
                 <hr />
 
-                <div class="input-group mb-3">
+                <form class="input-group mb-3" @onsubmit="OnChatSend">
                     <input type="text" @bind="ChatSendingText" class="form-control" placeholder="メッセージを送信" aria-label="メッセージを送信" aria-describedby="button-addon2">
-                    <button class="btn btn-outline-secondary" type="button" id="button-addon2" data-bs-toggle="collapse" data-bs-target="#flush-collapseOne" aria-expanded="false" aria-controls="flush-collapseOne" aria-describedby="button-addon3"><i class="bi bi-emoji-smile"></i></button>
-                    <button class="btn btn-primary" type="button" id="button-addon3" @onclick="OnChatSend"><i class="bi bi-send"></i></button>
-                </div>
-                <div class="accordion accordion-flush" id="accordionFlushExample">
-                    <div class="accordion-item">
-                        <div id="flush-collapseOne" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
-                            <div class="accordion-body">
-                                <div class="input-group mb-3">
-                                    <input type="text" class="form-control" @bind="GiphySearch" placeholder="スタンプを検索" aria-label="スタンプを検索" aria-describedby="button-addon21">
-                                    <button class="btn btn-primary" type="button" id="button-addon21" @onclick="SearchGiphy"><i class="bi bi-search"></i></button>
+                    <button class="btn btn-outline-secondary" type="button" id="button-addon2" data-bs-toggle="collapse" data-bs-target="#stamp-panel" aria-expanded="false" aria-controls="stamp-panel" aria-describedby="button-addon3"><i class="bi bi-emoji-smile"></i></button>
+                    <button class="btn btn-primary" type="submit" id="button-addon3" ><i class="bi bi-send"></i></button>
+                </form>
+                <div class="collapse" id="stamp-panel">
+                    <form class="input-group mb-3" @onsubmit="SearchGiphy">
+                        <input type="text" class="form-control" @bind="GiphySearch" placeholder="スタンプを検索" aria-label="スタンプを検索" aria-describedby="button-addon21">
+                        <button class="btn btn-primary" type="submit" id="button-addon21"><i class="bi bi-search"></i></button>
+                    </form>
+                    <div class="container-fluid">
+                        <div class="row text-center">
+                            @foreach (var img in GiphyResults)
+                            {
+                                <div class="col-4 d-flex align-items-center">
+                                    <button class="btn btn-light" @onclick="e=>OnStampSend(img)"><img class="img-thumbnail" src="@img" alt="@img" /></button>
                                 </div>
-                                <div class="container-fluid">
-                                    <div class="row text-center">
-                                        @foreach(var img in GiphyResults)
-                                        {
-                                            <div class="col-4 d-flex align-items-center">
-                                                <button class="btn btn-light" @onclick="e=>OnStampSend(img)"><img class="img-fluid img-thumbnail" src="@img" alt="@img" /></button>
-                                            </div>
-                                        }
-                                        <div class="col-4 d-flex align-items-center">
-                                            <img class="img-fluid img-thumbnail" src="./img/PoweredBy_200px-White_HorizText.png" alt="Powerd by GIPHY" />
-                                        </div>
-                                    </div>
-                                </div>
+                            }
+                            <div class="col-4">
+                                <img class="img-thumbnail" src="./img/PoweredBy_200px-White_HorizText.png" alt="Powerd by GIPHY" />
                             </div>
                         </div>
                     </div>
@@ -457,7 +452,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-4">
+        <div class="col-3">
             <h4>チャット</h4>
             <div class="toast-container" id="chat">
                 @if (chats.Count > 0)
@@ -547,6 +542,7 @@
         </div>
     </div>
 </div>
+
 
 <div class="modal fade" id="forbiddenModal" tabindex="-2" data-bs-backdrop="static" aria-labelledby="forbiddenModalLabel" aria-hidden="true">
     <div class="modal-dialog">

@@ -10,11 +10,12 @@ namespace StudioSync.Core
     {
         public List<Message> Messages { get; set; } = new List<Message>();
         public Scenario Scenario { get; set; } = new Scenario("3:00");
+        public int MessageMaxCount { get; set; } = 6;
 
         public void AddMessage(Message message)
         {
             Messages.Add(message);
-            Messages = Messages.TakeLast(5).ToList();
+            Messages = Messages.TakeLast(MessageMaxCount).ToList();
         }
         public bool LifeChecking { get; set; }
     }

@@ -27,7 +27,7 @@
     {
         return System.Text.RegularExpressions.Regex.Replace(
            input,
-           @"img-(\s?s?https?://[-_.!~*'()a-zA-Z0-9;/?:@&=+$,%#]+$)", "<div class=\"text-center\"><img src=\"$1\"  class=\"img-fluid img-thumbnail\" style=\"max-width: 100%; height: auto;\" alt=\"$1\" /></div>"
+           @"img-(\s?s?https?://[-_.!~*'()a-zA-Z0-9;/?:@&=+$,%#]+$)", "<a href=\"$1\" class=\"text-center\"><img src=\"$1\"  class=\"img-fluid img-thumbnail\" style=\"max-width: 100%; height: auto;\" alt=\"$1\" /></div>"
         );
     }
     string ConvertUrlToLink(string input)
