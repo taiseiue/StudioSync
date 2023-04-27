@@ -4,6 +4,7 @@
 @using System.Net.Http;
 @using StudioSync.Core;
 @using System.Net.Http.Json
+@using System.Text.Encodings.Web
 @inject HttpClient Http
 @inject NavigationManager MyNavigationManager
 @inject IJSRuntime JSRuntime;
@@ -22,7 +23,9 @@
     string FriendryName = "スタジオ";
     string ServerAddress = "https://api.wsoft.ws/studio-sync";
     string ClientID = Guid.NewGuid().ToString("N");
-    Progress UsingProgress = null;
+    string GiphySearch = "Funny";
+    List<string> GiphyResults = new List<string>();
+    Progress UsingProgress = new Progress();
     DateTime TimeLimit = DateTime.MinValue;
     TimeSpan CountUp = TimeSpan.Zero;
     TimeSpan TimeMax = TimeSpan.Zero;
@@ -194,10 +197,31 @@
 
         Timer.Start();
 
+        SearchGiphy();
         Initailzed = true;
         await ShowModal("welcomeModal");
 
 
+    }
+    async void SearchGiphy()
+    {
+        try{
+            string query = UrlEncoder.Default.Encode(GiphySearch);
+            var resp = await Http.GetAsync("https://api.giphy.com/v1/gifs/search?api_key=cexYwZ98TYZw7BIh0uptHoakXA7MbZty&q="+query+"&limit=11");
+            var r = await resp.Content.ReadFromJsonAsync<Giphy.Giphy>();
+            GiphyResults.Clear();
+            foreach(var d in r.Data)
+            {
+                try
+                {
+                    GiphyResults.Add(d.Images.fixed_height_downsampled.Webp);
+                }catch{}
+        }
+        }
+        catch
+        {
+            
+        }
     }
     async Task ShowModal(string id)
     {
@@ -240,6 +264,14 @@
         {
             await hubConnection.InvokeAsync("Send", FriendryName, ChatSendingText,SynchroCode);
             ChatSendingText = string.Empty;
+        }
+    }
+    async void OnStampSend(string url)
+    {
+        if (!string.IsNullOrEmpty(url))
+        {
+            ChatSendingText += " img-" + url;
+            OnChatSend();
         }
     }
     async void OnConnectionChange()
@@ -379,9 +411,36 @@
                     </div>
                 </div>
                 <hr />
+
                 <div class="input-group mb-3">
                     <input type="text" @bind="ChatSendingText" class="form-control" placeholder="メッセージを送信" aria-label="メッセージを送信" aria-describedby="button-addon2">
-                    <button class="btn btn-primary" type="button" id="button-addon2" @onclick="OnChatSend"><i class="bi bi-send"></i></button>
+                    <button class="btn btn-outline-secondary" type="button" id="button-addon2" data-bs-toggle="collapse" data-bs-target="#flush-collapseOne" aria-expanded="false" aria-controls="flush-collapseOne" aria-describedby="button-addon3"><i class="bi bi-emoji-smile"></i></button>
+                    <button class="btn btn-primary" type="button" id="button-addon3" @onclick="OnChatSend"><i class="bi bi-send"></i></button>
+                </div>
+                <div class="accordion accordion-flush" id="accordionFlushExample">
+                    <div class="accordion-item">
+                        <div id="flush-collapseOne" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
+                            <div class="accordion-body">
+                                <div class="input-group mb-3">
+                                    <input type="text" class="form-control" @bind="GiphySearch" placeholder="スタンプを検索" aria-label="スタンプを検索" aria-describedby="button-addon21">
+                                    <button class="btn btn-primary" type="button" id="button-addon21" @onclick="SearchGiphy"><i class="bi bi-search"></i></button>
+                                </div>
+                                <div class="container-fluid">
+                                    <div class="row text-center">
+                                        @foreach(var img in GiphyResults)
+                                        {
+                                            <div class="col-4 d-flex align-items-center">
+                                                <button class="btn btn-light" @onclick="e=>OnStampSend(img)"><img class="img-fluid img-thumbnail" src="@img" alt="@img" /></button>
+                                            </div>
+                                        }
+                                        <div class="col-4 d-flex align-items-center">
+                                            <img class="img-fluid img-thumbnail" src="./img/PoweredBy_200px-White_HorizText.png" alt="Powerd by GIPHY" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <hr/>
                 <h3>シンクロ</h3>

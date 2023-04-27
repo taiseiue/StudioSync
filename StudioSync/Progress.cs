@@ -4,6 +4,7 @@
     {
         public Dictionary<TimeSpan,string> Progresses { get; set; }
         public TimeSpan Total { get; set; }
+        public Progress() { }
         public Progress(string text)
         {
             Total = TimeSpan.Zero;
