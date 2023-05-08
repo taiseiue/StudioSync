@@ -18,6 +18,7 @@
     string ChatSendingText = "";
     string NowTime = "00:00:00";
     string MainTime = "00:00";
+    string SubTime = "00:00";
     string NewSyncCode = "";
     string FlowText = "サーバーとシンクロ中";
     string FriendryName = "スタジオ";
@@ -25,6 +26,7 @@
     string ClientID = Guid.NewGuid().ToString("N");
     string GiphySearch = "Funny";
     string ImgZoomSrc = "";
+    string Title = "「「タイトル」」";
     List<string> GiphyResults = new List<string>();
     Progress UsingProgress = new Progress();
     DateTime TimeLimit = DateTime.MinValue;
@@ -36,7 +38,7 @@
     bool timering = false;
     bool finish = false;
     bool fastrecive = false;
-    string Script="3:00";
+    string Script="";
     int syncCount = 0;
     int syncSecs = 2;
     bool Initailzed = false;
@@ -79,15 +81,24 @@
             if (timering)
             {
                 TimeMax -= TimeSpan.FromSeconds(1); CountUp += TimeSpan.FromSeconds(1);
-                MainTime = TimeMax.Minutes + ":"+TimeMax.Seconds;
+                if (UsingProgress.Reverse)
+                {
+                    MainTime = CountUp.Minutes.ToString("d2") + ":" + CountUp.Seconds.ToString("d2");
+                    SubTime = TimeMax.Minutes.ToString("d2") + ":" + TimeMax.Seconds.ToString("d2");
+                }
+                else
+                {
+                    MainTime = TimeMax.Minutes.ToString("d2") + ":" + TimeMax.Seconds.ToString("d2");
+                    SubTime = CountUp.Minutes.ToString("d2") + ":" + CountUp.Seconds.ToString("d2");
+                }
                 if (TimeMax == TimeSpan.Zero)
                 {
                     timering = false;
                     finish = true;
                 }
 
-            }else
-            if (cd != -1)
+            }
+            else if (cd != -1)
             {
                 cd--;
                 MainTime = "00:0"+cd;
@@ -154,9 +165,14 @@
         {
             Script = script;
             UsingProgress = new Progress(script);
+            Title = UsingProgress.Title;
             TimeMax = UsingProgress.Total;
             //タイマー開始
             cd = 3;
+            timering = false;
+            finish = false;
+            CountUp = TimeSpan.Zero;
+            TimeMax = UsingProgress.Total;
             MainTime = "00:0" + cd;
             /*
             NowTime = "シンクロ中";
@@ -290,7 +306,7 @@
     async void OnTimerStart()
     {
         var progress = new Progress(Script);
-        await hubConnection.InvokeAsync("Send", FriendryName,progress.Total.Minutes+":"+progress.Total.Seconds+"のタイマーを開始しました", SynchroCode);
+        await hubConnection.InvokeAsync("Send", FriendryName,progress.Total.Minutes+":"+progress.Total.Seconds+"の"+(progress.Reverse?"リバース":"")+"タイマーを開始しました", SynchroCode);
         //タイマー同期時刻を計算
         var dt = DateTime.Now;
         dt=dt.AddSeconds(5);
@@ -393,13 +409,13 @@
                         <h2>@NowTime</h2>
                     </div>
                     <div class="col-6">
-                        <p>次のシーン/終了まで</p>
-                        <h2>00:00</h2>
+                        <p>サブタイマー</p>
+                        <h2>@SubTime</h2>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col">
-                        <p class="text-center fs-4">「「コーナー名」」</p>
+                        <p class="text-center fs-4">@Title</p>
                         <p class="text-center" style="font-size: 100px;">@MainTime</p>
                     </div>
                 </div>

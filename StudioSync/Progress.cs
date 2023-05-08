@@ -4,6 +4,8 @@
     {
         public Dictionary<TimeSpan,string> Progresses { get; set; }
         public TimeSpan Total { get; set; }
+        public bool Reverse { get; set; }
+        public string Title { get; set; }
         public Progress() { }
         public Progress(string text)
         {
@@ -12,22 +14,27 @@
             Progresses=new Dictionary<TimeSpan,string>();
             foreach(string line in lines)
             {
-                int i = line.IndexOf('#');
-                string rline = line.Replace("：", ":");
-                if (i > 0)
+                string rline = line.Replace("：", ":").Trim();
+                if (rline.StartsWith("#"))
                 {
                     //あるとき
-                    var time = ConvertSpan(text);
-                        Progresses.Add(time, rline.Substring(i + 1));
+                    if (rline.StartsWith("#!"))
+                    {
+                        var time = ConvertSpan(rline.Substring(2));
+                        Progresses.Add(time, "");
                         Total = time;
-                    
+                        Reverse= true;
+                    }
+                    else
+                    {
+                        var time = ConvertSpan(rline.Substring(1));
+                        Progresses.Add(time, "");
+                        Total = time;
+                    }
                 }
-                else
+                else if (rline.StartsWith("「「"))
                 {
-                    //ないとき
-                    var time = ConvertSpan(text);
-                    Progresses.Add(time,"");
-                        Total = time;
+                    Title = rline;
                 }
             }
         }
