@@ -48,7 +48,8 @@ namespace StudioSync.Server
                 var ls = new List<string>();
                 foreach (var s in SynccodeToSession.Keys)
                 {
-                    if (!life_check.Contains(s))
+                    //応答がないかつ永続化リストに名前がない場合はタイムアウト
+                    if (!life_check.Contains(s) && !SynccodeToSession[s].IsPerpetuation)
                     {
                         ls.Add(s);
                     }

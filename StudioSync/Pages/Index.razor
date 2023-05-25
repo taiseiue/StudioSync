@@ -5,6 +5,7 @@
 @using StudioSync.Core;
 @using System.Net.Http.Json
 @using System.Text.Encodings.Web
+@using System.Text.Json;
 @inject HttpClient Http
 @inject NavigationManager MyNavigationManager
 @inject IJSRuntime JSRuntime;
@@ -38,12 +39,15 @@
     bool timering = false;
     bool finish = false;
     bool fastrecive = false;
+    bool infini = false;
+    int maxchat = 6;
     string Script="";
     int syncCount = 0;
     int syncSecs = 2;
     bool Initailzed = false;
     bool IsConnected => hubConnection?.State == HubConnectionState.Connected;
     HubConnection hubConnection;
+    Session NowSession;
 
     [Parameter]
     public string SynchroCode { get; set; }
@@ -194,6 +198,7 @@
             {
                 Script = session.Scenario.RawScript;
             }
+            NowSession = session;
             chats = session.Messages;
             if (session.LifeChecking)
             {
@@ -316,6 +321,14 @@
     async void OnTimerPause()
     {
         await hubConnection.InvokeAsync("TimerPauseAd",SynchroCode);
+    }
+    async void ClockServer()
+    {
+        var ns = NowSession;
+        ns.MessageMaxCount = maxchat;
+        ns.IsPerpetuation = infini;
+
+        await hubConnection.InvokeAsync("ClockServer", SynchroCode, JsonSerializer.Serialize<Session>(ns));
     }
 
 }
@@ -508,6 +521,18 @@
                         <p>自動的に接続を再試行します。それでも上手くいかない場合は、接続先の変更が必要な場合があります。</p>
                     }
                 </div>
+                <hr/>
+                <h6>セッションの設定</h6>
+                <p>セッションの設定を使用して、同じセッション内にいるすべての端末に影響を及ぼす設定を変更します。</p>
+                <p>セッションの永続化:<b>@(NowSession?.IsPerpetuation==true ? "有効" : "無効")</b></p>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" @bind="infini" id="infini-check">
+                    <label class="form-check-label" for="infini-check">
+                        セッションを永続化する
+                    </label>
+
+                </div>
+                <button type="button" class="btn btn-primary" @onclick="ClockServer">適用</button>
                 <hr/>
                <div id="connection-setting">
                    <h6>接続先の変更</h6>

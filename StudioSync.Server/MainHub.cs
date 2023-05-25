@@ -76,12 +76,12 @@ namespace StudioSync.Server
         }
         public async void LifeCheck(string code)
         {
-            
                 MasterServer.Server.life_check.Add(code);
         }
         public async void ClockServer(string code,string session)
         {
                 var ses=JsonSerializer.Deserialize<Session>(session);
+            MasterServer.Server.SynccodeToSession[code] = ses;
                 await this.Clients.Group(code).SendAsync("Clock",ses );
 
         }
