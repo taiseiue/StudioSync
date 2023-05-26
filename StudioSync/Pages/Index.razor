@@ -525,7 +525,7 @@
                 <h6>セッションの設定</h6>
                 <p>セッションの設定を使用して、同じセッション内にいるすべての端末に影響を及ぼす設定を変更します。</p>
                 <p>セッションの永続化:<b>@(NowSession?.IsPerpetuation==true ? "有効" : "無効")</b></p>
-                <div class="form-check">
+                <div class="form-check form-switch">
                     <input class="form-check-input" type="checkbox" @bind="infini" id="infini-check">
                     <label class="form-check-label" for="infini-check">
                         セッションを永続化する
