@@ -2,7 +2,7 @@
 {
     public static class version
     {
-        public static int Version { get; set; } = 32;
+        public static int Version { get; set; } = 33;
         public static string CodeName { get; set; } = "Takuan";
 
         public static string ProductName { get; set; } = "WSOFT StudioSync";
